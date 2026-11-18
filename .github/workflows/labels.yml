@@ -1,0 +1,22 @@
+name: Create labels
+
+on:
+  push:
+    branches: [main]
+    paths: [.github/workflows/labels.yml]
+  workflow_dispatch:
+
+permissions:
+  issues: write
+
+jobs:
+  labels:
+    runs-on: ubuntu-latest
+    steps:
+      - env:
+          GH_TOKEN: ${{ github.token }}
+          R: ${{ github.repository }}
+        run: |
+          gh label create add-slide --repo "$R" --color c4532d --description "New slide for the library" --force
+          gh label create fix-word  --repo "$R" --color e2764f --description "Correction to a slide" --force
+          gh label create approved  --repo "$R" --color 2f7d4f --description "Maintainer approved, publish it" --force
