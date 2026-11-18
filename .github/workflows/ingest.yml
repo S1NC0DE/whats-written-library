@@ -1,0 +1,52 @@
+name: Update library from issue
+
+on:
+  issues:
+    types: [opened, labeled]
+
+permissions:
+  contents: write
+  issues: write
+
+concurrency:
+  group: library-data
+  cancel-in-progress: false
+
+jobs:
+  ingest:
+    if: contains(github.event.issue.labels.*.name, 'add-slide') || contains(github.event.issue.labels.*.name, 'fix-word')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - id: run
+        run: node scripts/ingest.mjs .
+
+      - if: steps.run.outputs.changed == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898299+github-actions[bot]@users.noreply.github.com"
+          git add data/
+          git commit -m "Library: update from #${{ github.event.issue.number }}"
+          git pull --rebase
+          git push
+
+      - if: steps.run.outputs.skip != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          MSG: ${{ steps.run.outputs.message }}
+          ID: ${{ steps.run.outputs.id }}
+          CHANGED: ${{ steps.run.outputs.changed }}
+          CLOSE: ${{ steps.run.outputs.close }}
+          SITE: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/
+        run: |
+          body="$MSG"
+          if [ "$CHANGED" = "true" ] && [ -n "$ID" ]; then body="$body
+
+          It will be live in about a minute: ${SITE}#n-${ID}"; fi
+          gh issue comment "${{ github.event.issue.number }}" --repo "${{ github.repository }}" --body "$body"
+          if [ "$CLOSE" = "true" ]; then gh issue close "${{ github.event.issue.number }}" --repo "${{ github.repository }}"; fi

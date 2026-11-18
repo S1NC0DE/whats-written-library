@@ -1,0 +1,12 @@
+{
+  "terms": [
+    "flexibility", "flexible", "machinery", "raw materials", "quantities", "talents", "skilled",
+    "supply chain", "lead time", "safety stock", "inventory", "postponement", "bullwhip effect",
+    "make-to-order", "make-to-stock", "economies of scale", "capacity", "sourcing", "nearshoring",
+    "resilience", "risk pooling", "demand forecasting", "service level", "responsiveness", "efficiency"
+  ],
+  "fixes": [
+    { "wrong": "tools", "right": "talents", "count": 1 },
+    { "wrong": "more skilled", "right": "better skilled", "count": 1 }
+  ]
+}

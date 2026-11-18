@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>What's Written · Class Library</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Caveat:wght@600&display=swap" rel="stylesheet">
+<style>
+  :root{ --bg:#f6f4ef; --card:#fff; --ink:#1d1d1f; --muted:#6b6b70; --line:#e3dfd6; --accent:#c4532d; --soft:#f1ece2; }
+  @media (prefers-color-scheme: dark){ :root{ --bg:#141414; --card:#1e1e1f; --ink:#f1f1f1; --muted:#a0a0a6; --line:#2e2e30; --accent:#e2764f; --soft:#26221f; } }
+  *{box-sizing:border-box;margin:0}
+  body{font-family:Inter,system-ui,sans-serif;background:var(--bg);color:var(--ink);-webkit-font-smoothing:antialiased}
+  .wrap{max-width:760px;margin:0 auto;padding:18px 16px 60px}
+  header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px}
+  h1{font-size:22px;font-weight:700} h1 span{font-family:Caveat,cursive;color:var(--accent);font-size:29px;font-weight:600}
+  a{color:var(--accent)}
+  .btn{display:inline-flex;align-items:center;gap:8px;padding:10px 14px;border-radius:12px;font:600 14px Inter,sans-serif;text-decoration:none;border:0;cursor:pointer}
+  .btn.primary{background:var(--accent);color:#fff}
+  .btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--line)}
+  nav{display:flex;gap:6px;margin-bottom:12px}
+  nav a{padding:8px 14px;border-radius:999px;text-decoration:none;color:var(--muted);font-weight:600;font-size:14px}
+  nav a.on{background:var(--ink);color:var(--bg)}
+  input[type=search]{width:100%;padding:12px 14px;border-radius:12px;border:1px solid var(--line);background:var(--card);color:var(--ink);font:15px Inter,sans-serif;margin-bottom:14px}
+  .group{margin:18px 0 8px;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 16px;margin-bottom:10px}
+  a.card{display:block;text-decoration:none;color:inherit}
+  a.card:hover{border-color:var(--accent)}
+  .card h3{font-size:16px;margin-bottom:4px}
+  .meta{font-size:12.5px;color:var(--muted)}
+  .snip{font-size:14px;color:var(--muted);margin-top:6px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+  .note h2{font-size:22px;margin:4px 0 6px}
+  .note img{width:100%;border-radius:12px;margin:12px 0;display:block;background:var(--soft)}
+  .note ul{padding-left:22px;margin:10px 0} .note li{margin:6px 0;line-height:1.5} .note p{margin:8px 0;line-height:1.55}
+  .note ul ul{margin:4px 0}
+  .unsure{background:#fff3cd;color:#7a5a00;border-radius:4px;padding:0 3px}
+  @media (prefers-color-scheme: dark){ .unsure{background:#4a3b0d;color:#ffd979} }
+  .row{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+  .empty{color:var(--muted);text-align:center;padding:40px 0}
+  table{width:100%;border-collapse:collapse;font-size:14px} td,th{text-align:left;padding:8px 6px;border-bottom:1px solid var(--line)} th{color:var(--muted);font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.05em}
+  .chips{display:flex;flex-wrap:wrap;gap:6px} .chip{background:var(--soft);border-radius:999px;padding:5px 10px;font-size:13px}
+  .hidden{display:none!important}
+  footer{margin-top:30px;font-size:12.5px;color:var(--muted);text-align:center}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>What's <span>Written</span></h1>
+    <a class="btn primary" id="addBtn" href="#" target="_blank" rel="noopener">+ Add a slide</a>
+  </header>
+  <nav><a href="#" id="tabLib">Library</a><a href="#dictionary" id="tabDict">Dictionary</a></nav>
+
+  <section id="lib">
+    <input type="search" id="q" placeholder="Search slides, e.g. flexibility" autocomplete="off">
+    <div id="list"></div>
+  </section>
+
+  <section id="noteView" class="hidden"></section>
+
+  <section id="dict" class="hidden">
+    <div class="card">
+      <h3>His handwriting → real word</h3>
+      <p class="meta" style="margin:4px 0 10px">Every fix the class submits is saved here, so recurring scrawls get recognised.</p>
+      <table><thead><tr><th>Misread as</th><th>Actually</th><th>Times</th></tr></thead><tbody id="fixes"></tbody></table>
+    </div>
+    <div class="card">
+      <h3>Course terms</h3>
+      <p class="meta" style="margin:4px 0 10px">Words that appear in this course, used to resolve unclear handwriting.</p>
+      <div class="chips" id="terms"></div>
+    </div>
+  </section>
+
+  <footer>Read-only for everyone, no login. To add or fix slides you need a free GitHub account.</footer>
+</div>
+
+<script>
+(function(){
+  const $ = id => document.getElementById(id);
+  // owner/repo from the GitHub Pages address: https://<owner>.github.io/<repo>/
+  const owner = (location.hostname.match(/^([^.]+)\.github\.io$/) || [])[1] || 'OWNER';
+  const repo = location.pathname.split('/').filter(Boolean)[0] || 'whats-written-library';
+  const GH = `https://github.com/${owner}/${repo}`;
+  const issueUrl = (tpl, params) => `${GH}/issues/new?template=${tpl}` + Object.entries(params || {}).map(([k, v]) => `&${encodeURIComponent(k)}=${encodeURIComponent(v)}`).join('');
+  $('addBtn').href = issueUrl('add-slide.yml');
+
+  let notes = [], dict = {terms: [], fixes: []};
+  const bust = '?v=' + Date.now();
+  Promise.all([
+    fetch('data/notes.json' + bust).then(r => r.ok ? r.json() : []).catch(() => []),
+    fetch('data/dictionary.json' + bust).then(r => r.ok ? r.json() : {}).catch(() => ({}))
+  ]).then(([n, d]) => {
+    notes = Array.isArray(n) ? n.filter(x => x && x.id && typeof x.text === 'string') : [];
+    dict = {terms: Array.isArray(d.terms) ? d.terms : [], fixes: Array.isArray(d.fixes) ? d.fixes : []};
+    route();
+  });
+
+  window.addEventListener('hashchange', route);
+  $('q').addEventListener('input', renderList);
+
+  function route(){
+    const h = location.hash.slice(1);
+    const isDict = h === 'dictionary', isNote = h.startsWith('n-');
+    $('lib').classList.toggle('hidden', isDict || isNote);
+    $('dict').classList.toggle('hidden', !isDict);
+    $('noteView').classList.toggle('hidden', !isNote);
+    $('tabLib').classList.toggle('on', !isDict);
+    $('tabDict').classList.toggle('on', isDict);
+    if (isDict) renderDict();
+    else if (isNote) renderNote(h.slice(2));
+    else renderList();
+    window.scrollTo(0, 0);
+  }
+
+  function el(tag, cls, text){ const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
+  const fmtDate = d => { const x = new Date(d + 'T12:00:00'); return isNaN(x) ? (d || '') : x.toLocaleDateString(undefined, {day:'numeric', month:'short', year:'numeric'}); };
+  const plain = t => t.replace(/^\s*(?:[-•*]|\d+[.)])\s+/gm, '').replace(/\s*\[\?\]/g, '');
+
+  function renderList(){
+    const q = $('q').value.trim().toLowerCase();
+    const list = $('list'); list.innerHTML = '';
+    const hits = notes.filter(n => !q || (n.title + ' ' + n.text + ' ' + n.lecture).toLowerCase().includes(q))
+                      .sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+    if (!hits.length){ list.appendChild(el('div', 'empty', q ? 'No slides match that search.' : 'No slides yet. Be the first to add one.')); return; }
+    let lastGroup = null;
+    for (const n of hits){
+      const g = (n.lecture || 'Other') + ' · ' + fmtDate(n.date);
+      if (g !== lastGroup){ list.appendChild(el('div', 'group', g)); lastGroup = g; }
+      const a = el('a', 'card'); a.href = '#n-' + n.id;
+      a.appendChild(el('h3', null, n.title || 'Untitled'));
+      a.appendChild(el('div', 'snip', plain(n.text).split('\n').join(' · ')));
+      list.appendChild(a);
+    }
+  }
+
+  function inline(parent, text){
+    const re = /(\S+)\s?\[\?\]/g; let last = 0, m;
+    while ((m = re.exec(text))){
+      parent.appendChild(document.createTextNode(text.slice(last, m.index)));
+      parent.appendChild(el('span', 'unsure', m[1] + ' ?'));
+      last = re.lastIndex;
+    }
+    parent.appendChild(document.createTextNode(text.slice(last)));
+  }
+  function renderBody(text){
+    const frag = document.createDocumentFragment(); let ul = null, sub = null;
+    for (const raw of text.replace(/\r/g, '').split('\n')){
+      if (!raw.trim()){ ul = sub = null; continue; }
+      const m = raw.match(/^(\s*)(?:[-•*]|(\d+[.)]))\s+(.*)$/);
+      if (m){
+        const deep = m[1].length >= 2;
+        if (!ul){ ul = el('ul'); frag.appendChild(ul); }
+        let target = ul;
+        if (deep){ if (!sub){ sub = el('ul'); (ul.lastElementChild || ul).appendChild(sub); } target = sub; } else sub = null;
+        const li = el('li'); inline(li, (m[2] ? m[2] + ' ' : '') + m[3]); target.appendChild(li);
+      } else { ul = sub = null; const p = el('p'); inline(p, raw.trim()); frag.appendChild(p); }
+    }
+    return frag;
+  }
+
+  function renderNote(id){
+    const v = $('noteView'); v.innerHTML = '';
+    const n = notes.find(x => x.id === id);
+    const back = el('a', 'btn ghost', '← Library'); back.href = '#'; v.appendChild(back);
+    if (!n){ v.appendChild(el('div', 'empty', 'This slide was not found.')); return; }
+    const c = el('div', 'card note'); v.appendChild(c); c.style.marginTop = '12px';
+    c.appendChild(el('div', 'meta', (n.lecture || '') + (n.date ? ' · ' + fmtDate(n.date) : '')));
+    c.appendChild(el('h2', null, n.title || 'Untitled'));
+    if (n.image && /^https:\/\//.test(n.image)){ const img = el('img'); img.src = n.image; img.alt = 'Photo of the slide'; img.loading = 'lazy'; img.onerror = () => img.remove(); c.appendChild(img); }
+    c.appendChild(renderBody(n.text));
+    const row = el('div', 'row'); c.appendChild(row);
+    const copy = el('button', 'btn ghost', 'Copy text');
+    copy.onclick = async () => { try { await navigator.clipboard.writeText((n.title ? n.title + '\n' : '') + n.text.replace(/\s*\[\?\]/g, ' (?)')); copy.textContent = 'Copied ✓'; } catch(e){ copy.textContent = 'Select the text to copy'; } setTimeout(() => copy.textContent = 'Copy text', 1800); };
+    row.appendChild(copy);
+    const fix = el('a', 'btn ghost', 'Suggest a fix'); fix.target = '_blank'; fix.rel = 'noopener';
+    fix.href = issueUrl('fix-word.yml', {note: n.id, title: 'Fix: ' + (n.title || n.id)}); row.appendChild(fix);
+    if (n.issue){ const src = el('a', 'meta', 'Source #' + n.issue); src.href = `${GH}/issues/${n.issue}`; src.target = '_blank'; src.style.alignSelf = 'center'; row.appendChild(src); }
+  }
+
+  function renderDict(){
+    const tb = $('fixes'); tb.innerHTML = '';
+    const fx = [...dict.fixes].sort((a, b) => (b.count || 0) - (a.count || 0));
+    if (!fx.length){ const tr = el('tr'); const td = el('td', 'meta', 'No fixes yet.'); td.colSpan = 3; tr.appendChild(td); tb.appendChild(tr); }
+    for (const f of fx){ const tr = el('tr'); tr.appendChild(el('td', null, f.wrong)); tr.appendChild(el('td', null, f.right)); tr.appendChild(el('td', null, String(f.count || 1))); tb.appendChild(tr); }
+    const t = $('terms'); t.innerHTML = '';
+    [...dict.terms].sort().forEach(w => t.appendChild(el('span', 'chip', w)));
+  }
+})();
+</script>
+</body>
+</html>

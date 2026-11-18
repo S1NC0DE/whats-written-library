@@ -1,0 +1,44 @@
+name: Add a slide
+description: Add a decoded slide to the class library
+title: "Add slide: "
+labels: ["add-slide"]
+body:
+  - type: input
+    id: lecture
+    attributes:
+      label: Lecture
+      description: Course or lecture name
+      value: "Strategic Issues in SCM"
+    validations:
+      required: true
+  - type: input
+    id: date
+    attributes:
+      label: Date
+      description: Lecture date as YYYY-MM-DD
+      placeholder: "2026-11-16"
+    validations:
+      required: true
+  - type: input
+    id: slide-title
+    attributes:
+      label: Slide title
+      placeholder: "Why is flexibility expensive?"
+    validations:
+      required: true
+  - type: textarea
+    id: text
+    attributes:
+      label: Text
+      description: The decoded text. One point per line, starting with "- ". Indent sub-points with two spaces. Mark unsure words with [?].
+      placeholder: |
+        - Machinery needs to be flexible
+        - More raw materials in smaller quantities
+      render: text
+    validations:
+      required: true
+  - type: textarea
+    id: photo
+    attributes:
+      label: Photo (optional)
+      description: Drag the photo or the What's Written image in here.

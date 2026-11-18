@@ -1,0 +1,27 @@
+name: Fix a word
+description: Correct a misread word in a slide. The fix is also added to the handwriting dictionary.
+title: "Fix: "
+labels: ["fix-word"]
+body:
+  - type: input
+    id: note
+    attributes:
+      label: Slide ID
+      description: Filled in automatically when you use "Suggest a fix" on a slide.
+    validations:
+      required: true
+  - type: input
+    id: wrong
+    attributes:
+      label: Wrong word or phrase
+      description: Exactly as it appears in the slide text
+      placeholder: "tools"
+    validations:
+      required: true
+  - type: input
+    id: right
+    attributes:
+      label: Correct word or phrase
+      placeholder: "talents"
+    validations:
+      required: true
