@@ -27,6 +27,8 @@
   .btn:active{transform:scale(.98)}
   .btn svg{width:19px;height:19px;flex:none}
   #capBtn{background:var(--accent);color:#04110d;box-shadow:0 0 24px var(--glow)}
+  .btn.icon{flex:0 0 56px;background:rgba(255,255,255,.03);color:var(--ink);border:1px solid var(--line)}
+  .btn.icon:hover{border-color:var(--accent);color:var(--accent)}
   #dlBtn{background:rgba(255,255,255,.03);color:var(--ink);border:1px solid var(--line);backdrop-filter:blur(6px)}
   #dlBtn:not(.off):hover{border-color:var(--accent);color:var(--accent)}
   .btn.off{opacity:.35;pointer-events:none;box-shadow:none}
@@ -46,10 +48,12 @@
   </main>
   <div class="bar">
     <label class="btn" id="capBtn" for="camInput" role="button" tabindex="0"></label>
+    <label class="btn icon" id="upBtn" for="upInput" role="button" tabindex="0" aria-label="Upload from gallery" title="Upload from gallery"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="4.5" width="17" height="15" rx="1.5"/><circle cx="9" cy="10" r="1.6"/><path d="M20.5 16l-5-5-8 8.5"/></svg></label>
     <button class="btn off" id="dlBtn"></button>
   </div>
   <footer>© 2026 Jayant Singh Amethia</footer>
   <input type="file" id="camInput" class="file-hidden" accept="image/*" capture="environment" tabindex="-1">
+  <input type="file" id="upInput" class="file-hidden" accept="image/*" tabindex="-1">
 
 <script>
 (function(){
@@ -69,6 +73,7 @@
   function setCap(state, label){
     const b = $('capBtn'); clearTimeout(errTimer);
     b.classList.remove('off','err');
+    const up = $('upBtn'); up.classList.toggle('off', state === 'busy' || state === 'signin'); $('upInput').disabled = state === 'busy' || state === 'signin';
     if (state === 'busy'){ b.innerHTML = '<span class="spin"></span>Reading…'; b.classList.add('off'); $('camInput').disabled = true; return; }
     $('camInput').disabled = false;
     if (state === 'signin'){ b.innerHTML = 'Sign in to Claude'; b.classList.add('err','off'); $('camInput').disabled = true; return; }
@@ -85,6 +90,8 @@
 
   $('capBtn').addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); if (!busy) $('camInput').click(); } });
   $('camInput').onchange = e => { const f = e.target.files[0]; e.target.value = ''; if (f) handle(f); };
+  $('upInput').onchange = e => { const f = e.target.files[0]; e.target.value = ''; if (f) handle(f); };
+  $('upBtn').addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); if (!busy) $('upInput').click(); } });
 
   // ---------- photo -> decode ----------
   async function handle(file){
