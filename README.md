@@ -29,9 +29,10 @@ Wrong word? ──► "Suggest a fix" ──► Action fixes the slide + adds it
 
 ## The decoder app
 
-`app/index.html` is the source of the **What's Written™** photo decoder (Capture → clean text → Download).
-It runs as a Claude artifact, because the reading step uses the viewer's Claude account:
-https://claude.ai/artifact/A39weh5RW3wDt5h6R3P3hJ
+`src/whats-written-app.html` is the source of the **What's Written™** photo decoder (Capture → clean text → Download).
+It runs as a Claude artifact, because the reading step uses the viewer's Claude account.
+
+Share this address: **https://s1nc0de.github.io/whats-written-library/app/** (it opens the app on claude.ai).
 
 ## Spam protection
 
