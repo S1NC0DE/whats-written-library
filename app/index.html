@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>What's Written</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+  :root{ --bg:#07080a; --ink:#e8eaed; --muted:#7d838c; --line:rgba(255,255,255,.09); --accent:#5ef0c8; --glow:rgba(94,240,200,.35); --soft:rgba(255,255,255,.035); color-scheme:dark; }
+  *{box-sizing:border-box;margin:0}
+  html,body{height:100%}
+  body{font-family:"Space Grotesk",system-ui,sans-serif;background:var(--bg);color:var(--ink);-webkit-font-smoothing:antialiased;display:flex;flex-direction:column;min-height:100vh;min-height:100dvh;
+    background-image:linear-gradient(var(--line) 1px,transparent 1px),linear-gradient(90deg,var(--line) 1px,transparent 1px);background-size:44px 44px;background-position:center -1px}
+  body::before{content:"";position:fixed;inset:0;pointer-events:none;background:radial-gradient(ellipse at 50% 0%,transparent 0,var(--bg) 70%)}
+  h1{position:relative;font:500 13px "JetBrains Mono",ui-monospace,monospace;letter-spacing:.32em;text-transform:uppercase;text-align:center;padding:26px 16px 10px;color:var(--ink)}
+  h1 span{color:var(--accent);text-shadow:0 0 18px var(--glow)}
+  main{position:relative;flex:1;display:flex;align-items:center;justify-content:center;padding:8px 16px;overflow:auto}
+  #result{max-width:100%;max-height:100%;border-radius:6px;border:1px solid var(--line);box-shadow:0 0 0 1px rgba(94,240,200,.08),0 20px 60px rgba(0,0,0,.6);display:none}
+  #empty{width:132px;height:132px;border:1px solid var(--line);border-radius:4px;display:grid;place-items:center;position:relative;background:var(--soft)}
+  #empty::before,#empty::after{content:"";position:absolute;width:14px;height:14px;border-color:var(--accent);border-style:solid}
+  #empty::before{top:-1px;left:-1px;border-width:2px 0 0 2px}
+  #empty::after{bottom:-1px;right:-1px;border-width:0 2px 2px 0}
+  #empty svg{width:48px;height:48px;color:var(--accent);opacity:.9;filter:drop-shadow(0 0 10px var(--glow))}
+  .bar{position:relative;display:flex;gap:10px;padding:12px 16px 14px;max-width:560px;width:100%;margin:0 auto}
+  .btn{flex:1;height:56px;border-radius:4px;border:0;font:500 13px "JetBrains Mono",ui-monospace,monospace;letter-spacing:.16em;text-transform:uppercase;display:flex;align-items:center;justify-content:center;gap:10px;cursor:pointer;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent;transition:transform .08s,opacity .15s,box-shadow .2s}
+  .btn:active{transform:scale(.98)}
+  .btn svg{width:19px;height:19px;flex:none}
+  #capBtn{background:var(--accent);color:#04110d;box-shadow:0 0 24px var(--glow)}
+  #dlBtn{background:rgba(255,255,255,.03);color:var(--ink);border:1px solid var(--line);backdrop-filter:blur(6px)}
+  #dlBtn:not(.off):hover{border-color:var(--accent);color:var(--accent)}
+  .btn.off{opacity:.35;pointer-events:none;box-shadow:none}
+  .btn.err{background:#ff5470!important;color:#1a0207!important;border-color:transparent!important;box-shadow:0 0 24px rgba(255,84,112,.4)!important}
+  .spin{width:18px;height:18px;border:2px solid rgba(4,17,13,.25);border-top-color:#04110d;border-radius:50%;animation:s .7s linear infinite}
+  @keyframes s{to{transform:rotate(360deg)}}
+  h1 sup{font-size:9px;letter-spacing:0;margin-left:2px;color:var(--muted)}
+  footer{position:relative;text-align:center;font:500 10px "JetBrains Mono",ui-monospace,monospace;letter-spacing:.14em;color:var(--muted);padding:0 16px calc(12px + env(safe-area-inset-bottom));margin-top:-6px}
+  .file-hidden{position:absolute;width:1px;height:1px;opacity:0;overflow:hidden;clip:rect(0 0 0 0);pointer-events:none}
+</style>
+</head>
+<body>
+  <h1>What's <span>Written</span><sup>™</sup></h1>
+  <main>
+    <div id="empty" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L18.5 9.5a2.1 2.1 0 0 0-4-4L4 16z"/><path d="M13.5 6.5l4 4"/><path d="M14 20h6"/></svg></div>
+    <img id="result" alt="Decoded handwriting">
+  </main>
+  <div class="bar">
+    <label class="btn" id="capBtn" for="camInput" role="button" tabindex="0"></label>
+    <button class="btn off" id="dlBtn"></button>
+  </div>
+  <footer>© 2026 Jayant Singh Amethia</footer>
+  <input type="file" id="camInput" class="file-hidden" accept="image/*" capture="environment" tabindex="-1">
+
+<script>
+(function(){
+  const $ = id => document.getElementById(id);
+  const ICON_CAM = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>';
+  const ICON_DL = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11"/><path d="M7 10l5 5 5-5"/><path d="M5 20h14"/></svg>';
+
+  let sample = null, downloads = null, ready = null;
+  let busy = false, resultBlob = null, resultUrl = null, resultTitle = '', photoImg = null, errTimer = null;
+
+  // ---------- capabilities ----------
+  const useCap = n => { try { return (window.claude && typeof window.claude.use === 'function') ? Promise.resolve(window.claude.use(n)).catch(() => null) : Promise.resolve(null); } catch(e){ return Promise.resolve(null); } };
+  ready = useCap('sample').then(s => { sample = s; if (!s) setCap('signin'); return s; });
+  useCap('downloads').then(d => { downloads = d; setDl(); });
+
+  // ---------- button states ----------
+  function setCap(state, label){
+    const b = $('capBtn'); clearTimeout(errTimer);
+    b.classList.remove('off','err');
+    if (state === 'busy'){ b.innerHTML = '<span class="spin"></span>Reading…'; b.classList.add('off'); $('camInput').disabled = true; return; }
+    $('camInput').disabled = false;
+    if (state === 'signin'){ b.innerHTML = 'Sign in to Claude'; b.classList.add('err','off'); $('camInput').disabled = true; return; }
+    if (state === 'err'){ b.innerHTML = label; b.classList.add('err'); errTimer = setTimeout(() => setCap(sample === null && readyDone ? 'signin' : 'idle'), 3000); return; }
+    b.innerHTML = ICON_CAM + 'Capture';
+  }
+  let readyDone = false; ready.then(() => { readyDone = true; });
+  function setDl(label){
+    const b = $('dlBtn');
+    b.innerHTML = ICON_DL + (label || 'Download');
+    b.classList.toggle('off', !resultBlob || busy);
+  }
+  setCap('idle'); setDl();
+
+  $('capBtn').addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); if (!busy) $('camInput').click(); } });
+  $('camInput').onchange = e => { const f = e.target.files[0]; e.target.value = ''; if (f) handle(f); };
+
+  // ---------- photo -> decode ----------
+  async function handle(file){
+    if (busy) return;
+    busy = true; setCap('busy'); setDl();
+    let blob;
+    try {
+      photoImg = await loadImg(file);
+      blob = await toJpeg(photoImg, 1568, 0.82);
+      if (!blob) throw 0;
+    } catch(e){ busy = false; setCap('err', "Can't read photo"); setDl(); return; }
+
+    const s = await ready;
+    if (!s){ busy = false; setCap('signin'); setDl(); return; }
+
+    let pending = null, lastDraw = 0;
+    const draw = text => { pending = text; const now = performance.now(); if (now - lastDraw > 120){ lastDraw = now; paint(pending, false); } };
+    try {
+      const r = await s(PROMPT, { images: [blob], modelTier: 'default', cache: false,
+        onText: ({text}) => { if (text && text !== 'Thinking...') draw(text); } });
+      await paint(r.text || '', true);
+      busy = false; setCap('idle'); setDl();
+    } catch(e){
+      busy = false;
+      const c = e && e.code;
+      setCap('err', c === 'not_granted' ? 'Allow Claude to continue' : c === 'rate_limited' ? 'Busy, try again soon' : 'Try again');
+      setDl();
+    }
+  }
+  function loadImg(file){
+    return new Promise(async (res, rej) => {
+      const url = URL.createObjectURL(file); const img = new Image();
+      img.onload = () => { URL.revokeObjectURL(url); res(img); };
+      img.onerror = async () => { URL.revokeObjectURL(url);
+        try { const b = await createImageBitmap(file); res({naturalWidth: b.width, naturalHeight: b.height, _bmp: b}); } catch(e){ rej(e); } };
+      img.src = url;
+    });
+  }
+  function toJpeg(img, max, q){
+    const sc = Math.min(1, max / Math.max(img.naturalWidth, img.naturalHeight));
+    const c = document.createElement('canvas');
+    c.width = Math.round(img.naturalWidth * sc); c.height = Math.round(img.naturalHeight * sc);
+    c.getContext('2d').drawImage(img._bmp || img, 0, 0, c.width, c.height);
+    return new Promise(r => c.toBlob(r, 'image/jpeg', q));
+  }
+
+  const PROMPT = `You are reading a photo taken by a university student in a lecture. The professor's handwriting (on a projected slide, tablet annotation or whiteboard) is very hard to read. Transcribe ONLY what is written/printed on the slide or board into clean, readable English.
+
+Rules:
+- Ignore everything that is not on the slide/board (room, ceiling, people, objects).
+- Use the printed slide title and surrounding words as context to resolve hard-to-read words; prefer the word that makes sense in the sentence and subject.
+- Fix obvious handwriting slips into correct spelling, but do NOT add ideas the professor didn't write.
+- If a word is genuinely unreadable even with context, write your best guess followed by [?]. Use [?] sparingly.
+- Keep the structure: bullets stay bullets, arrows become "→", numbering stays.
+
+Output (plain text, no code fences, nothing else):
+# <printed slide title, or a short descriptive title if none>
+- <bullet line>
+  - <sub-bullet line>
+Plain lines for non-bullet text.
+If there is no handwriting or slide text visible, output exactly: # Nothing to read`;
+
+  // ---------- parse ----------
+  function parse(text){
+    const lines = String(text).replace(/\r/g,'').split('\n');
+    let title = ''; const items = [];
+    for (const raw of lines){
+      const l = raw.replace(/\s+$/,''); if (!l.trim()) continue;
+      const h = l.match(/^#{1,3}\s+(.*)$/);
+      if (h){ if (!title) title = h[1].trim(); else items.push({lvl:0, text:h[1].trim(), head:true}); continue; }
+      const b = l.match(/^(\s*)(?:[-•*]|\d+[.)])\s+(.*)$/);
+      if (b){ const num = l.trim().match(/^(\d+[.)])/); items.push({lvl: b[1].length >= 2 ? 2 : 1, text: (num ? num[1] + ' ' : '') + b[2]}); continue; }
+      items.push({lvl:0, text:l.trim()});
+    }
+    return { title: title || 'Notes', items };
+  }
+
+  // ---------- render image ----------
+  let fontsReady = null;
+  const fonts = () => fontsReady || (fontsReady = Promise.all(['700 44px "Space Grotesk"','400 34px "Space Grotesk"'].map(f => document.fonts ? document.fonts.load(f).catch(()=>{}) : null)));
+  const FONT = '"Space Grotesk", system-ui, -apple-system, Segoe UI, Roboto, sans-serif';
+
+  function tokens(text){
+    // split into words; "word [?]" -> unsure token
+    const out = []; const re = /(\S+)\s?\[\?\]|\S+/g; let m;
+    while ((m = re.exec(text))){ if (m[1]) out.push({t:m[1], u:true}); else if (m[0] !== '[?]') out.push({t:m[0], u:false}); }
+    return out;
+  }
+  function wrap(ctx, toks, maxW){
+    const lines = []; let cur = []; let w = 0; const sp = ctx.measureText(' ').width;
+    for (let tk of toks){
+      let tw = ctx.measureText(tk.t).width;
+      if (tw > maxW){ // break very long words
+        let s = tk.t; while (ctx.measureText(s).width > maxW && s.length > 1){
+          let n = s.length; while (n > 1 && ctx.measureText(s.slice(0,n)).width > maxW) n--;
+          if (cur.length){ lines.push(cur); cur = []; w = 0; }
+          lines.push([{t:s.slice(0,n), u:tk.u}]); s = s.slice(n);
+        }
+        tk = {t:s, u:tk.u}; tw = ctx.measureText(s).width;
+      }
+      if (cur.length && w + sp + tw > maxW){ lines.push(cur); cur = []; w = 0; }
+      w += (cur.length ? sp : 0) + tw; cur.push(tk);
+    }
+    if (cur.length) lines.push(cur);
+    return lines;
+  }
+
+  async function paint(text, final){
+    if (final) await fonts();
+    const {title, items} = parse(text);
+    resultTitle = title;
+    const W = 1200, P = 64, TW = W - P*2;
+    const meas = document.createElement('canvas').getContext('2d');
+    // photo strip
+    let ph = 0, pw = 0;
+    if (photoImg){ const r = photoImg.naturalHeight / photoImg.naturalWidth; ph = Math.min(Math.round(W * r), 760); pw = W; }
+    // layout text
+    const blocks = []; let y = 0;
+    meas.font = `700 46px ${FONT}`;
+    const tl = wrap(meas, title.split(/\s+/).map(t => ({t, u:false})), TW);
+    blocks.push({kind:'title', lines:tl, y, lh:58}); y += tl.length * 58 + 30;
+    meas.font = `400 34px ${FONT}`;
+    for (const it of items){
+      const indent = it.lvl === 2 ? 76 : it.lvl === 1 ? 40 : 0;
+      if (it.head){ meas.font = `700 36px ${FONT}`; }
+      const lines = wrap(meas, tokens(it.text), TW - indent);
+      meas.font = `400 34px ${FONT}`;
+      blocks.push({kind:'item', it, indent, lines, y, lh:48}); y += lines.length * 48 + 14;
+    }
+    if (!items.length && !final) { blocks.push({kind:'dots', y}); y += 48; }
+    const textH = y;
+    const FOOT = 64;
+    const H = ph + P + textH + P + FOOT;
+    const c = document.createElement('canvas'); c.width = W; c.height = H;
+    const ctx = c.getContext('2d');
+    ctx.fillStyle = '#0b0d10'; ctx.fillRect(0, 0, W, H);
+    if (photoImg){
+      // cover-fit photo into strip
+      const iw = photoImg.naturalWidth, ih = photoImg.naturalHeight, sc = Math.max(pw/iw, ph/ih);
+      const sw = pw/sc, sh = ph/sc;
+      ctx.drawImage(photoImg._bmp || photoImg, (iw-sw)/2, (ih-sh)/2, sw, sh, 0, 0, pw, ph);
+      ctx.fillStyle = '#5ef0c8'; ctx.fillRect(0, ph, W, 4);
+    }
+    const top = ph + P;
+    ctx.textBaseline = 'top';
+    for (const b of blocks){
+      if (b.kind === 'dots'){ ctx.fillStyle = '#7d838c'; ctx.font = `400 34px ${FONT}`; ctx.fillText('…', P, top + b.y); continue; }
+      if (b.kind === 'title'){
+        ctx.fillStyle = '#f2f4f6'; ctx.font = `700 46px ${FONT}`;
+        b.lines.forEach((ln, i) => ctx.fillText(ln.map(t => t.t).join(' '), P, top + b.y + i*b.lh));
+        continue;
+      }
+      const x0 = P + b.indent;
+      ctx.font = b.it.head ? `700 36px ${FONT}` : `400 34px ${FONT}`;
+      if (b.it.lvl){
+        ctx.fillStyle = '#5ef0c8';
+        ctx.beginPath(); const r = b.it.lvl === 2 ? 5 : 7;
+        ctx.arc(x0 - 22, top + b.y + 21, r, 0, Math.PI*2);
+        b.it.lvl === 2 ? (ctx.lineWidth = 2.5, ctx.strokeStyle = '#5ef0c8', ctx.stroke()) : ctx.fill();
+      }
+      const sp = ctx.measureText(' ').width;
+      b.lines.forEach((ln, i) => {
+        let x = x0; const yy = top + b.y + i*b.lh;
+        for (const tk of ln){
+          const tw = ctx.measureText(tk.t).width;
+          if (tk.u){
+            ctx.fillStyle = 'rgba(255,196,64,.18)'; ctx.fillRect(x - 5, yy - 3, tw + 10 + ctx.measureText(' ?').width, 44);
+            ctx.fillStyle = '#ffc440'; ctx.fillText(tk.t + ' ?', x, yy);
+            x += tw + ctx.measureText(' ?').width + sp;
+          } else { ctx.fillStyle = '#d6d9de'; ctx.fillText(tk.t, x, yy); x += tw + sp; }
+        }
+      });
+    }
+    ctx.fillStyle = 'rgba(255,255,255,.08)'; ctx.fillRect(P, H - FOOT, W - P*2, 1);
+    ctx.fillStyle = '#7d838c'; ctx.font = `500 22px ${FONT}`; ctx.textBaseline = 'middle';
+    ctx.fillText("What's Written™  ·  © 2026 Jayant Singh Amethia", P, H - FOOT/2);
+    const blob = await new Promise(r => c.toBlob(r, 'image/png'));
+    if (!blob) return;
+    if (resultUrl) URL.revokeObjectURL(resultUrl);
+    resultUrl = URL.createObjectURL(blob);
+    const img = $('result'); img.src = resultUrl; img.style.display = 'block'; $('empty').style.display = 'none';
+    if (final){ resultBlob = blob; }
+  }
+
+  // ---------- download ----------
+  $('dlBtn').onclick = async () => {
+    if (!resultBlob || busy) return;
+    const name = 'whats-written-' + (resultTitle || 'notes').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 50) + '.png';
+    if (!downloads){ setDl('Long-press image to save'); setTimeout(() => setDl(), 2500); return; }
+    try { await downloads.save({ filename: name, data: resultBlob }); setDl('Saved ✓'); }
+    catch(e){ const c = e && e.code; setDl(c === 'declined' ? 'Download' : c === 'rate_limited' ? 'One moment…' : 'Long-press image to save'); }
+    setTimeout(() => setDl(), 2000);
+  };
+})();
+</script>
+</body>
+</html>
