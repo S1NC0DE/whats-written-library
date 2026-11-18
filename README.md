@@ -1,4 +1,4 @@
-# What's Written · Class Library
+# What's Written™ · Class Library
 
 A free, no-login library of decoded lecture slides, plus a growing dictionary of the professor's handwriting.
 
@@ -47,3 +47,7 @@ This creates the labels and turns on GitHub Pages. The site is then at
 ```bash
 node --test test/ingest.test.mjs
 ```
+
+## Copyright
+
+What's Written™ · © 2026 Jayant Singh Amethia. All rights reserved. See [LICENSE](LICENSE).
