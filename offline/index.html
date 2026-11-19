@@ -126,17 +126,19 @@ async function handle(file){
     }).catch(() => { throw {ui: 'No internet for first load'}; });
 
     // read piece by piece, line by line
-    const lines = new Map();
+    const lines = new Map(); window.__wwLog = { raw: [], text: '' };
     for (let i = 0; i < found.pieces.length; i++){
       const p = found.pieces[i];
       setCap('busy', 'Reading ' + (i + 1) + '/' + found.pieces.length);
       const out = await reader(p.canvas.toDataURL('image/png'), { max_new_tokens: 24 });
-      const txt = cleanOut((out && out[0] && out[0].generated_text) || '');
+      const rawOut = (out && out[0] && out[0].generated_text) || '';
+      const txt = cleanOut(rawOut); window.__wwLog.raw.push([p.line, rawOut]);
       if (!lines.has(p.line)) lines.set(p.line, { y: p.y0, words: [] });
       if (txt && txt !== '.' && txt !== '#') lines.get(p.line).words.push(txt);
       await paint(compose(lines, found.region), false);
     }
-    await paint(compose(lines, found.region), true);
+    window.__wwLog.text = compose(lines, found.region);
+    await paint(window.__wwLog.text, true);
     busy = false; setCap('idle'); setDl();
   } catch(e){
     busy = false; setCap('err', (e && e.ui) || 'Try again'); setDl();
