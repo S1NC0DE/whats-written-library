@@ -131,7 +131,7 @@
     let pending = null, lastDraw = 0;
     const draw = text => { pending = text; const now = performance.now(); if (now - lastDraw > 120){ lastDraw = now; paint(pending, false); } };
     try {
-      const r = await s(PROMPT, { images: [blob], modelTier: 'default', cache: false,
+      const r = await s(PROMPT, { images: [blob], modelTier: 'complex', cache: false,
         onText: ({text}) => { if (text && text !== 'Thinking...') draw(text); } });
       await paint(r.text || '', true);
       busy = false; setCap('idle'); setDl();
