@@ -159,21 +159,22 @@
     return new Promise(r => c.toBlob(r, 'image/jpeg', q));
   }
 
-  const PROMPT = `You are reading a photo taken by a university student in a lecture. The professor's handwriting (on a projected slide, tablet annotation or whiteboard) is very hard to read. Transcribe ONLY what is written/printed on the slide or board into clean, readable English.
+  const PROMPT = `This photo shows a lecture slide or board that a professor has written on by hand. Transcribe ONLY the professor's HANDWRITING into clean, correctly spelled English.
 
-Rules:
-- Ignore everything that is not on the slide/board (room, ceiling, people, objects).
-- Use the printed slide title and surrounding words as context to resolve hard-to-read words; prefer the word that makes sense in the sentence and subject.
-- Fix obvious handwriting slips into correct spelling, but do NOT add ideas the professor didn't write.
-- If a word is genuinely unreadable even with context, write your best guess followed by [?]. Use [?] sparingly.
-- Keep the structure: bullets stay bullets, arrows become "→", numbering stays.
+Strict rules:
+- Output only words, numbers and symbols that were written BY HAND.
+- Do NOT copy any printed/typed text from the slide (headings, bullet points, labels, chart axes, prices printed on the slide). The only exception: the first line is the printed slide title, as context.
+- Do NOT describe anything: no "Handwritten:", no "arrow pointing to…", no positions, no chart descriptions, no explanations.
+- Use the slide's printed text and subject only as context to decide what a scrawled word says. Fix obvious slips, but never add words that were not written.
+- One handwritten note per line, in reading order (top to bottom, left to right). If the writing is a list, keep it as a list. If he drew an arrow between two written words, write "word → word".
+- If a word is unreadable even with context, write your best guess followed by [?].
+- Ignore the room, people and objects.
 
-Output (plain text, no code fences, nothing else):
-# <printed slide title, or a short descriptive title if none>
-- <bullet line>
-  - <sub-bullet line>
-Plain lines for non-bullet text.
-If there is no handwriting or slide text visible, output exactly: # Nothing to read`;
+Output format (plain text, nothing else):
+# <printed slide title>
+- <handwritten note>
+- <handwritten note>
+If there is no handwriting at all, output only the title line and then: - (no handwriting)`;
 
   // ---------- parse ----------
   function parse(text){
