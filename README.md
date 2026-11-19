@@ -34,6 +34,18 @@ It runs as a Claude artifact, because the reading step uses the viewer's Claude 
 
 Share this address: **https://s1nc0de.github.io/whats-written-library/app/** (it opens the app on claude.ai).
 
+## Offline reader (beta, no Claude, no login)
+
+**https://s1nc0de.github.io/whats-written-library/offline/**
+
+Reads handwriting entirely in the browser with Microsoft's open TrOCR handwriting model
+(`Xenova/trocr-small-handwritten`, downloaded once and cached by the browser).
+`offline/ink.js` finds the projection screen, separates pen strokes from background and solid shapes,
+cuts the writing into lines and words, and the course dictionary (`data/dictionary.json`) fixes known misreads.
+Add `#debug` to the address to see the pieces the model reads; `#demo` runs a sample slide.
+
+Known limits of v0: tilted photos, very dark rooms and photos taken from far away.
+
 ## Spam protection
 
 Submissions from the repo owner and collaborators are published automatically.
