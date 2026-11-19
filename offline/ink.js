@@ -177,7 +177,10 @@ export function findHandwriting(canvas) {
   const { mask, mode } = inkMask(px, W, H, region);
   despeckle(mask, W, H, region, Math.max(12, Math.round(W * H / 60000)));
   const dense = p => { let c = 0; for (let y = p.y0; y <= p.y1; y++) for (let x = p.x0; x <= p.x1; x++) c += mask[y * W + x]; return c / ((p.x1 - p.x0 + 1) * (p.y1 - p.y0 + 1)); };
+  // ink bounding box inside a piece: bullet dashes are flat (tiny height vs the line), skip them
+  const inkH = p => { let a = -1, b = -1; for (let y = p.y0; y <= p.y1; y++) { let any = 0; for (let x = p.x0; x <= p.x1 && !any; x++) any = mask[y * W + x]; if (any) { if (a < 0) a = y; b = y; } } return a < 0 ? 0 : b - a + 1; };
   const pieces = segment(mask, W, H, region).filter(p => dense(p) < 0.35)   // solid blobs are not writing
+    .filter(p => inkH(p) >= (p.y1 - p.y0 + 1) * 0.3 || (p.x1 - p.x0) > (p.y1 - p.y0) * 3)
     .map(p => ({ ...p, canvas: pieceCanvas(mask, W, p) }));
   return { region, mode, pieces, mask };
 }

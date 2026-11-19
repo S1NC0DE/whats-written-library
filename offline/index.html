@@ -131,7 +131,7 @@ async function handle(file){
       const p = found.pieces[i];
       setCap('busy', 'Reading ' + (i + 1) + '/' + found.pieces.length);
       const out = await reader(p.canvas.toDataURL('image/png'), { max_new_tokens: 24 });
-      const txt = String((out && out[0] && out[0].generated_text) || '').replace(/\s+/g, ' ').trim();
+      const txt = cleanOut((out && out[0] && out[0].generated_text) || '');
       if (!lines.has(p.line)) lines.set(p.line, { y: p.y0, words: [] });
       if (txt && txt !== '.' && txt !== '#') lines.get(p.line).words.push(txt);
       await paint(compose(lines, found.region), false);
@@ -144,13 +144,21 @@ async function handle(file){
   }
 }
 
+// model output clean-up: drop stray full stops and repetition loops ("000 000 000 …")
+function cleanOut(t){
+  t = String(t).replace(/\s+/g, ' ').trim().replace(/[.,;:]+$/, '').replace(/^[.,;:#\s]+/, '');
+  const w = t.split(' ');
+  if (w.length >= 4 && new Set(w).size <= Math.ceil(w.length / 3)) return '';
+  if (/^[\d\s.,]+$/.test(t) && t.length > 6) return '';
+  return t;
+}
 // first band near the top in capitals = printed slide title
 function compose(lines, region){
   const arr = [...lines.values()].sort((a, b) => a.y - b.y).map(l => ({ y: l.y, text: correct(l.words.join(' ').replace(/^[-–—]\s*/, '')) })).filter(l => l.text);
   let title = 'Handwritten notes';
   if (arr.length){
     const t = arr[0], letters = t.text.replace(/[^A-Za-z]/g, ''), caps = t.text.replace(/[^A-Z]/g, '');
-    if (t.y < region.y0 + (region.y1 - region.y0) * 0.2 && letters.length > 4 && caps.length / letters.length > 0.6){ title = t.text; arr.shift(); }
+    if (t.y < region.y0 + (region.y1 - region.y0) * 0.16 && letters.length > 4 && caps.length / letters.length > 0.3){ title = t.text; arr.shift(); }
   }
   return '# ' + title + '\n' + arr.map(l => '- ' + l.text).join('\n');
 }
